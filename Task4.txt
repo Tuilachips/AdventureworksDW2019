@@ -1,0 +1,18 @@
+/*Ex 1: Từ các bảng dbo.DimProduct, dbo.DimPromotion, dbo.FactInternetSales, 
+lấy ra ProductKey, EnglishProductName của các dòng thoả mãn Discount Pct >= 20% */
+
+/*Ex 2: Từ các bảng DimProduct, DimProductSubcategory, DimProductCategory, 
+lấy ra các cột Product key, EnglishProductName, EnglishProductSubCategoryName, EnglishProductCategoryName 
+của sản phẩm thoả mãn điều kiện EnglishProductCategoryName là 'Clothing' */
+
+/*Ex 3: Từ bảng FactInternetSales và DimProduct, lấy ra ProductKey, EnglishProductName, ListPrice 
+của những sản phẩm chưa từng được bán. Sử dụng 2 cách: toán tử IN và phép JOIN */ 
+
+/*Ex 4: Từ bảng DimDepartmentGroup, lấy ra thông tin DepartmentGroupKey, DepartmentGroupName, ParentDepartmentGroupKey 
+và thực hiện self-join lấy ra ParentDepartmentGroupName */ 
+
+/*Ex 5: Từ bảng FactFinance, DimOrganization, DimScenario, 
+lấy ra OrganizationKey, OrganizationName, Parent OrganizationKey, 
+và thực hiện self-join lấy ra Parent OrganizationName, 
+Amount thoả mãn điều kiện ScenarioName là 'Actual'. */   
+

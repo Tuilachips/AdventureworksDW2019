@@ -1,0 +1,574 @@
+Task 1
+Ex1
+USE AdventureWorksDW2019 
+SELECT EmployeeKey
+    , FirstName 
+    , LastName 
+    , BaseRate 
+    , VacationHours 
+    , SickLeaveHours
+    , FirstName + ' ' + LastName AS FullName 
+    , BaseRate * VacationHours AS VacationLeavePay
+    , BaseRate * SickLeaveHours AS SickLeavePay 
+    , BaseRate * VacationHours + BaseRate * SickLeaveHours AS TotalLeavePay 
+FROM dbo.DimEmployee
+
+Ex2
+SELECT SalesOrderNumber 
+    , ProductKey
+    , OrderDate
+    , OrderQuantity * UnitPrice AS TotalRevenue
+    , ProductStandardCost + DiscountAmount AS TotalCost
+    , OrderQuantity * UnitPrice - (ProductStandardCost + DiscountAmount) AS Profit
+    , (OrderQuantity * UnitPrice - (ProductStandardCost + DiscountAmount))/(OrderQuantity * UnitPrice)*100 AS ProfitMargin 
+FROM dbo.FactInternetSales
+
+Ex3
+SELECT (UnitsBalance + UnitsIn - UnitsOut) AS 'NoProductEOD'
+    , (UnitsBalance + UnitsIn - UnitsOut) * UnitCost AS 'Total Cost' 
+FROM dbo.FactProductInventory
+
+Ex4
+SELECT DISTINCT EnglishCountryRegionName
+    , City
+    , StateProvinceName 
+FROM dbo.DimGeography 
+ORDER BY EnglishCountryRegionName ASC
+    , City DESC
+
+Ex5
+SELECT TOP 10 PERCENT EnglishProductName 
+FROM dbo.DimProduct 
+ORDER BY ListPrice DESC
+
+Task 2
+Ex1
+SELECT * 
+FROM FactInternetSales
+WHERE OrderDate >= '2011-01-01'
+    AND YEAR(ShipDate) = 2011; -- ShipDate BETWEEN '2011-01-01' AND '2011-12-31'
+
+Ex2
+SELECT ProductKey
+    , ProductAlternateKey
+    , EnglishProductName
+    , Color
+FROM dbo.DimProduct
+WHERE ProductAlternateKey LIKE 'BK-[^T]%-[0-9][0-9]' 
+    AND Color IN ('Black', 'White', 'Red')
+
+-- Hoặc:
+SELECT ProductKey
+    , ProductAlternateKey
+    , EnglishProductName
+    , Color
+FROM dbo.DimProduct
+WHERE ProductAlternateKey LIKE 'BK-[^T]%-' + REPLICATE('[0-9]', 2) 
+    AND Color IN ('Black', 'Red', 'White')
+
+Ex3
+SELECT ProductKey
+FROM dbo.DimProduct
+WHERE Color = 'Red'
+
+Ex4
+SELECT *
+FROM FactInternetSales
+WHERE ProductKey IN 
+(
+    SELECT ProductKey
+    FROM dbo.DimProduct
+    WHERE Color = 'Red'
+)
+
+Ex5
+SELECT EmployeeKey 
+    , FirstName 
+    , LastName 
+    , MiddleName
+FROM  
+    (
+	SELECT EmployeeKey 
+            , FirstName 
+            , LastName 
+            , MiddleName 
+            , LEN(Phone) AS PhoneLen 
+        FROM DimEmployee
+    ) AS A 
+WHERE MiddleName IS NOT NULL 
+    AND PhoneLen = 12 
+
+-- HOẶC:
+SELECT EmployeeKey 
+    , FirstName 
+    , LastName 
+    , MiddleName
+FROM DimEmployee 
+WHERE MiddleName IS NOT NULL 
+    AND LEN(Phone) = 12
+
+Ex6
+SELECT EmployeeKey
+    , FirstName
+    , LastName
+    , MiddleName
+    -- Ý 1 
+    /*4*/, ISNULL(FirstName + ' ' + MiddleName + ' ' + LastName, FirstName + ' ' + LastName ) AS FullName_isnull
+    /*5*/, FirstName + ISNULL(' ' + MiddleName + ' ', ' ') + LastName AS FullName_Isnull
+    /*6*/, CONCAT_WS(' ', FirstName, MiddleName, LastName) AS FullName_concatws -- CONCAT_WS
+    , HireDate
+    , BirthDate
+    -- Ý 2
+    , DATEDIFF(YEAR, BirthDate, HireDate) AS Age_hired
+    -- Ý 3 
+    , DATEDIFF(YEAR, BirthDate, CURRENT_TIMESTAMP) AS Age_today
+    -- Ý 4 
+    , LoginID
+    -- , REPLACE(LoginID, 'adventure-works\', '') AS UserName_replace 
+    -- , SUBSTRING(LoginID, 17, 100) AS UserName_substring_fixed
+    , SUBSTRING(LoginID, CHARINDEX('\', LoginID) + 1, LEN(LoginID)) AS UserName_substring_dynamic
+    , RIGHT(LoginID, LEN(LoginID) - CHARINDEX('\', LoginID)) AS UserName_right_dynamic
+FROM dbo.DimEmployee
+
+-- HOẶC:
+a. 
+SELECT EmployeeKey
+, FirstName + ' ' + MiddleName + ' ' + LastName AS 'FullName'
+FROM DimEmployee
+b. 
+SELECT EmployeeKey
+, DATEDIFF(YEAR,BirthDate,HireDate) AS Age_hired
+FROM DimEmployee
+c. 
+SELECT EmployeeKey
+, DATEDIFF(YEAR,BirthDate,CURRENT_TIMESTAMP) // Cần alias tên column
+FROM DimEmployee
+d. 
+SELECT EmployeeKey
+, SUBSTRING(LoginID, CHARINDEX('\', LoginID) + 1, LEN(LoginID)) AS UserName
+FROM DimEmployee
+
+Task 3
+Ex1
+USE AdventureWorksDW2019
+SELECT FIS.SalesOrderNumber
+    , FIS.SalesOrderLineNumber
+    , FIS.ProductKey
+    , DST.SalesTerritoryCountry
+FROM dbo.FactInternetSales AS FIS 
+LEFT JOIN dbo.DimSalesTerritory AS DST 
+ON FIS.SalesTerritoryKey = DST.SalesTerritoryKey
+WHERE FIS.SalesAmount > 1000
+
+Ex2
+SELECT DP.ProductKey
+    , DP.EnglishProductName
+    , DP.Color
+FROM dbo.DimProduct AS DP
+LEFT JOIN dbo.DimProductSubcategory AS DPS 
+ON DP.ProductSubcategoryKey = DPS.ProductSubcategoryKey
+WHERE DPS.EnglishProductSubcategoryName LIKE '%Bikes%'
+    AND (DP.ListPrice >= 3399 AND DP.ListPrice < 3400);
+
+-- HOẶC
+SELECT DP.ProductKey
+    , DP.EnglishProductName
+    , DP.Color
+FROM dbo.DimProduct AS DP
+LEFT JOIN dbo.DimProductSubcategory AS DPS 
+ON DP.ProductSubcategoryKey = DPS.ProductSubcategoryKey
+WHERE DPS.EnglishProductSubcategoryName LIKE '%Bikes%'
+    AND FLOOR(DP.ListPrice) = 3399
+
+Ex3
+SELECT FIS.ProductKey
+    , FIS.SalesOrderNumber
+    , FIS.SalesAmount
+    , FORMAT(DP.DiscountPct,'P') AS PerDiscount
+FROM dbo.FactInternetSales AS FIS
+LEFT JOIN  dbo.DimPromotion AS DP
+ON FIS.PromotionKey = DP.PromotionKey
+WHERE DP.DiscountPct >= 0.2
+
+Ex4
+SELECT DC.Phone
+    , DG.City
+    , ISNULL(DC.FirstName + ' ' + DC.MiddleName + ' ' + DC.LastName, DC.FirstName + ' ' + DC.LastName ) AS FullName_1
+    , CONCAT_WS(' ', DC.FirstName, DC.MiddleName, DC.LastName) AS FullName_2
+    , CommuteDistance
+FROM dbo.DimCustomer AS DC 
+LEFT JOIN dbo.DimGeography AS DG 
+ON DC.GeographyKey = DG.GeographyKey
+WHERE DC.YearlyIncome > 150000 
+    AND DC.CommuteDistance IN ('0-1 Miles', '1-2 Miles', '2-5 Miles');
+
+-- HOẶC
+SELECT DC.Phone
+    , DG.City
+    , ISNULL(DC.FirstName + ' ' + DC.MiddleName + ' ' + DC.LastName, DC.FirstName + ' ' + DC.LastName ) AS FullName_1
+    , CONCAT_WS(' ', DC.FirstName, DC.MiddleName, DC.LastName) AS FullName_2
+    , CommuteDistance
+FROM dbo.DimCustomer AS DC 
+LEFT JOIN dbo.DimGeography AS DG 
+ON DC.GeographyKey = DG.GeographyKey
+WHERE DC.YearlyIncome > 150000 
+    AND DC.CommuteDistance LIKE '[0-4]-[1-5] Miles'
+
+Ex5
+WITH Customer_table AS 
+(
+    SELECT CustomerKey 
+		, YearlyIncome
+		, DATEDIFF(year, BirthDate, '2019-12-31') AS Age
+    FROM dbo.DimCustomer
+)
+SELECT CustomerKey
+    , ( CASE WHEN YearlyIncome BETWEEN 10000 AND 50000 THEN 'Low Income'
+	    WHEN YearlyIncome BETWEEN 50001 AND 90000 THEN 'Middle Income'
+	    ELSE 'High Income'
+        END ) AS YearlyInComeRange
+    , ( CASE WHEN Age <= 39 THEN 'Young Adults'
+	    WHEN Age >= 60 THEN 'Old Adults'
+	    ELSE 'Middle-Aged Adults'
+        END ) AS AgeRange 
+FROM Customer_table
+
+Ex6
+SELECT FIS.SalesOrderNumber
+    , SalesOrderLineNumber
+FROM dbo.FactInternetSales AS FIS 
+LEFT JOIN dbo.DimProduct AS DP
+ON FIS.ProductKey = DP.ProductKey
+WHERE DP.EnglishProductName LIKE '%Road%' 
+    AND DP.Color = 'Yellow'
+
+UNION
+
+SELECT FRS.SalesOrderNumber
+    , SalesOrderLineNumber
+FROM dbo.FactResellerSales AS FRS
+LEFT JOIN dbo.DimProduct AS DP
+ON FRS.ProductKey = DP.ProductKey
+WHERE DP.EnglishProductName LIKE '%Road%' 
+    AND DP.Color = 'Yellow'
+
+Task 4
+Ex1
+SELECT FIS.ProductKey
+    , DP.EnglishProductName
+FROM dbo.FactInternetSales AS FIS
+LEFT JOIN dbo.DimProduct AS DP 
+ON FIS.ProductKey = DP.ProductKey
+LEFT JOIN dbo.DimPromotion AS DPM 
+ON FIS.PromotionKey = DPM.PromotionKey
+WHERE DPM.DiscountPct >= 0.2
+
+Ex2
+SELECT DP.ProductKey
+    , DP.EnglishProductName
+    , DPSC.EnglishProductSubcategoryName
+    , DPC.EnglishProductCategoryName
+FROM dbo.DimProduct AS DP 
+LEFT JOIN dbo.DimProductSubcategory AS DPSC 
+ON DP.ProductSubcategoryKey = DPSC.ProductSubcategoryKey 
+LEFT JOIN dbo.DimProductCategory AS DPC 
+ON DPSC.ProductCategoryKey = DPC.ProductCategoryKey
+WHERE DPC.EnglishProductCategoryName = 'Clothing'
+
+Ex3
+-- Way 1: IN
+SELECT ProductKey
+    , EnglishProductName
+    , ListPrice
+FROM dbo.DimProduct
+WHERE ProductKey NOT IN (SELECT DISTINCT ProductKey FROM dbo.FactInternetSales); 
+
+
+SELECT * FROM dbo.DimProduct;
+-- 606 sản phâm 
+
+SELECT DISTINCT ProductKey FROM dbo.FactInternetSales;
+-- 158 sản phẩm 
+
+-- WAY 2: JOIN 
+SELECT DP.ProductKey
+    , DP.EnglishProductName
+    , DP.ListPrice
+FROM dbo.DimProduct AS DP 
+LEFT JOIN dbo.FactInternetSales AS FIS 
+ON DP.ProductKey = FIS.ProductKey
+WHERE FIS.SalesAmount IS NULL;
+
+--WAY 3: JOIN 
+SELECT DP.ProductKey
+    , DP.EnglishProductName
+    , DP.ListPrice
+FROM dbo.DimProduct AS DP 
+LEFT JOIN dbo.FactInternetSales AS FIS 
+ON DP.ProductKey = FIS.ProductKey
+WHERE FIS.SalesOrderNumber IS NULL
+
+Ex4
+SELECT ChildTable.DepartmentGroupName
+    , ParentTable.DepartmentGroupName AS ParentDepartmentGroupName
+FROM dbo.DimDepartmentGroup AS ChildTable
+LEFT JOIN dbo.DimDepartmentGroup AS ParentTable 
+ON ChildTable.ParentDepartmentGroupKey = ParentTable.DepartmentGroupKey
+
+Ex5
+-- Sử dụng CTE để tạo ra bảng tạm, Organization + ParentOrganization -> self join 
+WITH DimOrganization_withParent AS 
+(
+    SELECT childDO.OrganizationKey
+        , childDO.OrganizationName
+        , childDO.ParentOrganizationKey
+        , parentDO.OrganizationName AS ParentOrganizationName
+    FROM dbo.DimOrganization AS childDO
+    LEFT JOIN dbo.DimOrganization AS parentDO 
+    ON childDO.ParentOrganizationKey = parentDO.OrganizationKey
+)
+-- Đắp vào FactFinance
+SELECT FF.OrganizationKey
+    , DO.OrganizationName
+    , DO.ParentOrganizationKey
+    , DO.ParentOrganizationName
+    , FF.Amount
+FROM dbo.FactFinance AS FF 
+    LEFT JOIN dbo.DimScenario AS DS 
+    ON FF.ScenarioKey = DS.ScenarioKey
+    LEFT JOIN DimOrganization_withParent AS DO 
+    ON FF.OrganizationKey = DO.OrganizationKey
+WHERE DS.ScenarioName = 'Actual'
+
+-- HOẶC
+SELECT DO.OrganizationKey
+    , DO.OrganizationName
+    , PDO.OrganizationKey AS ParentOrganizationKey
+    , PDO.OrganizationName AS ParentOrganizationName
+    , FF.Amount
+FROM dbo.FactFinance AS FF 
+LEFT JOIN dbo.DimScenario AS DS 
+ON DS.ScenarioKey = FF.ScenarioKey
+LEFT JOIN dbo.DimOrganization AS DO 
+ON FF.OrganizationKey = DO.OrganizationKey
+LEFT JOIN dbo.DimOrganization AS PDO 
+ON DO.ParentOrganizationKey = PDO.OrganizationKey
+WHERE DS.ScenarioName = 'Actual'
+
+Task 5
+Ex1
+SELECT Title
+    , AVG(BaseRate) AS avgBaseRate
+FROM dbo.DimEmployee
+GROUP BY Title
+
+Ex2
+SELECT ProductKey
+    , OrderDate 
+    , SUM(OrderQuantity) AS TotalOrderQuantity
+FROM FactInternetSales
+GROUP BY ProductKey
+    , OrderDate
+
+Ex3
+SELECT DPC.ProductCategoryKey
+    , DPC.EnglishProductCategoryName
+    , SUM(FIS.SalesAmount) AS TotalRevenue
+    , SUM(FIS.TotalProductCost) AS TotalCost
+    , SUM(FIS.SalesAmount - FIS.TotalProductCost) AS TotalProfit
+FROM FactInternetSales AS FIS 
+LEFT JOIN DimProduct AS DP 
+ON DP.ProductKey = FIS.ProductKey
+LEFT JOIN DimProductSubcategory AS DPSC 
+ON DP.ProductSubcategoryKey = DPSC.ProductSubcategoryKey
+LEFT JOIN DimProductCategory AS DPC 
+ON DPSC.ProductCategoryKey = DPC.ProductCategoryKey
+WHERE Year(FIS.OrderDate) = 2012
+GROUP BY DPC.ProductCategoryKey
+    , DPC.EnglishProductCategoryName
+HAVING SUM(FIS.SalesAmount) > 5000
+
+Ex4
+WITH Product_new AS (
+    SELECT ProductKey
+        , Color
+        , (CASE WHEN Color in ('Black', 'Silver') THEN 'Basic'
+	        ELSE Color 
+           END) AS Color_group
+    FROM dbo.DimProduct
+) 
+SELECT DP.Color_group
+    , SUM(FIS.SalesAmount) AS TotalSalesAmount
+FROM dbo.FactInternetSales AS FIS 
+LEFT JOIN Product_new AS DP 
+ON FIS.ProductKey = DP.ProductKey
+GROUP BY DP.Color_group;
+
+-- HOẶC 
+SELECT 
+    (CASE WHEN Color in ('Black', 'Silver') THEN 'Basic'
+        ELSE Color 
+    END) AS Color_group
+    , SUM(SalesAmount) AS TotalSalesAmount
+FROM FactInternetSales AS FIS 
+LEFT JOIN DimProduct AS DP 
+ON FIS.ProductKey = DP.ProductKey
+GROUP BY (CASE WHEN Color in ('Black', 'Silver') THEN 'Basic'
+               ELSE Color 
+          END)
+
+Ex5
+-- INPUT: FactInternetSales, FactResellerSales
+WITH InternetSalesByMonth AS ( 
+    SELECT YEAR(OrderDate) AS YearNumber
+        , MONTH(OrderDate) AS MonthNumber
+        , SUM(SalesAmount) AS InternetSaleAmount
+   FROM dbo.FactInternetSales
+   GROUP BY YEAR(OrderDate), MONTH(OrderDate)
+),
+-- INPUT2 = Year, Month, Reseller_Sale_amount
+ResellerSalesByMonth AS (
+    SELECT YEAR(OrderDate) AS YearNumber
+        , MONTH(OrderDate) AS MonthNumber
+        , SUM(SalesAmount) AS ResellerSaleAmount
+   FROM dbo.FactResellerSales
+   GROUP BY YEAR(OrderDate), MONTH(OrderDate)
+    )
+SELECT ISNULL(Internet.YearNumber, Reseller.YearNumber) AS YearNumber
+    , ISNULL(Internet.MonthNumber, Reseller.MonthNumber) AS MonthNumber
+    , InternetSaleAmount
+    , ResellerSaleAmount
+FROM InternetSalesByMonth AS Internet
+FULL OUTER JOIN ResellerSalesByMonth AS Reseller 
+ON Reseller.MonthNumber = Internet.MonthNumber 
+    AND Reseller.YearNumber = Internet.YearNumber
+ORDER BY YearNumber DESC
+    , MonthNumber ASC
+
+
+Task 6
+Ex1
+SELECT CustomerKey
+    , SUM(OrderQuantity) AS TotalOrderQuantity
+FROM FactInternetSales
+GROUP BY CustomerKey
+ORDER BY TotalOrderQuantity DESC
+
+Ex2
+SELECT p.EnglishProductName
+    , SUM(f.OrderQuantity) AS TotalOrderQuantity
+FROM FactInternetSales F
+LEFT JOIN DimProduct P
+ON F.ProductKey = P.ProductKey
+GROUP BY P.EnglishProductName
+ORDER BY TotalOrderQuantity DESC
+
+Ex3
+SELECT CONCAT(C.FirstName, ' ', C.MiddleName, ' ', C.LastName) AS FullName
+    , COUNT(F.SalesOrderNumber) AS OrderCount
+FROM FactInternetSales F
+LEFT JOIN DimCustomer C 
+ON F.CustomerKey = C.CustomerKey
+WHERE YEAR(F.OrderDate) = 2014
+GROUP BY C.FirstName
+    , C.MiddleName
+    , C.LastName
+HAVING COUNT(F.SalesOrderNumber) >= 2
+ORDER BY OrderCount DESC
+
+Ex4
+WITH Sales_CTE AS (
+    SELECT PC.EnglishProductCategoryName
+        , SUM(F.SalesAmount) AS TotalAmount
+    FROM FactInternetSales F
+    LEFT JOIN DimProduct P 
+    ON F.ProductKey = P.ProductKey
+    LEFT JOIN DimProductSubcategory PS
+    ON P.ProductSubcategoryKey = PS.ProductSubcategoryKey
+    LEFT JOIN DimProductCategory PC 
+    ON PS.ProductCategoryKey = PC.ProductCategoryKey
+    WHERE YEAR(F.OrderDate) = 2014
+    GROUP BY PC.EnglishProductCategoryName
+)
+SELECT EnglishProductCategoryName
+    , TotalAmount
+FROM Sales_CTE
+ORDER BY TotalAmount DESC
+FETCH FIRST 2 ROWS ONLY
+
+Ex5
+SELECT SalesOrderNumber	
+    , SUM(SalesAmount) AS TotalRevenue
+FROM FactInternetSales
+GROUP BY SalesOrderNumber
+
+UNION
+
+SELECT SalesOrderNumber
+    , SUM(SalesAmount) AS TotalRevenue
+FROM FactResellerSales
+GROUP BY SalesOrderNumber
+
+Ex6
+SELECT DG.DepartmentGroupName
+    , PDG.DepartmentGroupName AS ParentDepartmentGroupName
+    , SUM(FF.Amount) AS TotalAmount
+FROM FactFinance FF
+LEFT JOIN DimDepartmentGroup DG 
+ON FF.DepartmentGroupKey = DG.DepartmentGroupKey
+LEFT JOIN DimDepartmentGroup PDG 
+ON DG.ParentDepartmentGroupKey = PDG.DepartmentGroupKey
+GROUP BY DG.DepartmentGroupName
+    , PDG.DepartmentGroupName
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

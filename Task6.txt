@@ -1,0 +1,12 @@
+/* Ex1: Dựa và bảng FactInternetSales, tính tổng số lượng sản phẩm (OrderQuantity) đã được bán cho mỗi khách hàng (CustomerKey). Hiển thị kết quả theo thứ tự giảm dần của tổng số lượng. */
+
+/* Ex2: Dựa vào bảng FactInternetSales và DimProduct, thống kê tổng số lượng sản phẩm được bán (TotalOrderQuantity) cho mỗi sản phẩm (EnglishProductName). Hiển thị kết quả theo thứ tự giảm dần của TotalOrderQuantity. */
+
+/* Ex3: Dựa vào bảng FactInternetSales, DimCustomer. Tạo ra trường FullName từ (FirstName, MiddleName, LastName và sử dụng dấu cách ' ' để ghép nối)   và thống kê số lượng đơn đặt hàng (OrderCount) mà họ đã thực hiện trong năm 2014. Và chỉ lấy những khách hàng có ít nhất 2 đơn đặt hàng.  */
+
+/*  Ex4: Từ bảng DimProduct, DimProductSubCategory, DimProductCategory và FactInternetSales.
+Viết truy vấn lấy ra EnglishProductCategoryName, TotalAmount (tính theo SaleAmount) của 2 danh mục có doanh thu cao nhất trong năm 2014 */
+
+/* Ex5: Từ bảng FactInternetSale và bảng FactResellerSale, thực hiện từ 2 nguồn bán là Internet và Reseller đưa ra tất cả tất cả các SaleOrderNumber và doanh thu của mỗi SaleOrderNumber */
+
+/* Ex6: Dựa vào 2 bảng DimDepartmentGroup và bảng FactFinace, thực hiện lấy ra TotalAmount (dựa vào Amount) của DepartmentGroupName và ParentDepartmentGroupName */
